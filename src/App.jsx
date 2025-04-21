@@ -1,12 +1,15 @@
-import "./App.css";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import PokemonList from "./components/PokemonList";
+import PokemonDetail from "./components/PokemonDetail";
 
 function App() {
   return (
-    <div>
-      <h1 className="text-center">포켓몬 도감</h1>
-      <PokemonList />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<PokemonList />} />
+        <Route path="/pokemon/:name" element={<PokemonDetail />} />
+      </Routes>
+    </Router>
   );
 }
 
