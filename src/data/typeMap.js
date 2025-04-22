@@ -1,0 +1,43 @@
+// data/typeMap.js
+
+export const typeKr = {
+  normal: "노말",
+  fire: "불꽃",
+  water: "물",
+  electric: "전기",
+  grass: "풀",
+  ice: "얼음",
+  fighting: "격투",
+  poison: "독",
+  ground: "땅",
+  flying: "비행",
+  psychic: "에스퍼",
+  bug: "벌레",
+  rock: "바위",
+  ghost: "고스트",
+  dragon: "드래곤",
+  dark: "악",
+  steel: "강철",
+  fairy: "페어리",
+};
+
+export const typeColors = {
+  normal: "bg-gray-400",
+  fire: "bg-red-500",
+  water: "bg-blue-500",
+  electric: "bg-yellow-400 text-black",
+  grass: "bg-green-500",
+  ice: "bg-cyan-400",
+  fighting: "bg-orange-600",
+  poison: "bg-purple-500",
+  ground: "bg-yellow-700",
+  flying: "bg-sky-300 text-black",
+  psychic: "bg-pink-600",
+  bug: "bg-lime-500",
+  rock: "bg-yellow-600",
+  ghost: "bg-indigo-600",
+  dragon: "bg-purple-700",
+  dark: "bg-gray-800 text-white",
+  steel: "bg-gray-500",
+  fairy: "bg-pink-400",
+};

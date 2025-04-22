@@ -1,41 +1,47 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import pokemonNameKr from "../data/pokemonNameKr.json"; // ✅ 한글 이름 JSON import
+import { useState, useEffect, useRef, useCallback } from "react";
+import pokemonNameKr from "../data/pokemonNameKr.json";
+import { typeKr, typeColors } from "../data/typeMap";
+import PokemonModal from "./PokemonModal";
+
+const text = {
+  ko: {
+    title: "포켓몬 리스트",
+    searchPlaceholder: "한글 이름으로 검색 (예: 피카츄)",
+    searchBtn: "검색",
+    toggleBtn: "ENG",
+  },
+  en: {
+    title: "Pokémon List",
+    searchPlaceholder: "Search by English name (e.g. Pikachu)",
+    searchBtn: "Search",
+    toggleBtn: "KOR",
+  },
+};
 
 function PokemonList() {
+  const LIMIT = 30;
   const [pokemons, setPokemons] = useState([]);
+  const [pokemonTypes, setPokemonTypes] = useState({});
+  const [language, setLanguage] = useState("ko");
+  const [searchMode, setSearchMode] = useState("ko");
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmedTerm, setConfirmedTerm] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [pokemonTypes, setPokemonTypes] = useState({});
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const loader = useRef(null);
+  const [selectedPokemon, setSelectedPokemon] = useState(null);
 
-  const typeKr = {
-    normal: "노말",
-    fire: "불꽃",
-    water: "물",
-    electric: "전기",
-    grass: "풀",
-    ice: "얼음",
-    fighting: "격투",
-    poison: "독",
-    ground: "땅",
-    flying: "비행",
-    psychic: "에스퍼",
-    bug: "벌레",
-    rock: "바위",
-    ghost: "고스트",
-    dragon: "드래곤",
-    dark: "악",
-    steel: "강철",
-    fairy: "페어리",
-  };
+  const fetchPokemons = useCallback(() => {
+    if (!hasMore || offset >= 1025) return;
 
-  useEffect(() => {
-    fetch("https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0")
+    fetch(`https://pokeapi.co/api/v2/pokemon?limit=${LIMIT}&offset=${offset}`)
       .then((res) => res.json())
       .then((data) => {
-        setPokemons(data.results);
+        setPokemons((prev) => [...prev, ...data.results]);
+        setOffset((prev) => prev + LIMIT);
+        if (offset + LIMIT >= 1025) setHasMore(false);
 
         Promise.all(
           data.results.map((p) =>
@@ -47,37 +53,75 @@ function PokemonList() {
               }))
           )
         ).then((typeData) => {
-          const typeMap = {};
-          typeData.forEach((p) => {
-            typeMap[p.name] = p.types;
+          setPokemonTypes((prev) => {
+            const newMap = { ...prev };
+            typeData.forEach((p) => {
+              newMap[p.name] = p.types;
+            });
+            return newMap;
           });
-          setPokemonTypes(typeMap);
         });
-      })
-      .catch((err) => console.error("포켓몬 데이터를 불러오는 중 오류 발생:", err));
-  }, []);
+      });
+  }, [offset, hasMore]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          fetchPokemons();
+        }
+      },
+      { threshold: 1 }
+    );
+    if (loader.current) observer.observe(loader.current);
+    return () => observer.disconnect();
+  }, [fetchPokemons, hasMore]);
 
   const getPokemonId = (url) => {
     const segments = url.split("/");
     return parseInt(segments[segments.length - 2], 10);
   };
 
+  const toggleLanguage = () => {
+    const nextLang = language === "ko" ? "en" : "ko";
+    setLanguage(nextLang);
+    setSearchMode(nextLang);
+    setSearchTerm("");
+    setConfirmedTerm("");
+    setSuggestions([]);
+    setActiveIndex(-1);
+  };
+
   const handleChange = (e) => {
     const input = e.target.value;
     setSearchTerm(input);
+
     if (input === "") {
       setSuggestions([]);
       setActiveIndex(-1);
-    } else {
-      const filtered = pokemons.filter((p) => p.name.toLowerCase().includes(input.toLowerCase()));
-      setSuggestions(filtered.slice(0, 10));
-      setActiveIndex(-1);
+      return;
     }
+
+    const filtered = pokemons.filter((p) => {
+      const id = getPokemonId(p.url);
+      if (id > 1025) return false;
+      const eng = p.name.toLowerCase();
+      const kor = (pokemonNameKr[id] || "").toLowerCase();
+      const term = input.toLowerCase();
+      return searchMode === "ko" ? kor.includes(term) : eng.includes(term);
+    });
+
+    setSuggestions(filtered.slice(0, 10));
+    setActiveIndex(-1);
   };
 
-  const confirmSearch = (value) => {
-    setConfirmedTerm(value);
-    setSearchTerm(value);
+  const confirmSearch = (englishName) => {
+    const matched = pokemons.find((p) => p.name === englishName);
+    const id = matched ? getPokemonId(matched.url) : null;
+    const display = language === "ko" && id ? pokemonNameKr[id] : englishName;
+
+    setConfirmedTerm(englishName);
+    setSearchTerm(display);
     setSuggestions([]);
     setActiveIndex(-1);
   };
@@ -97,39 +141,35 @@ function PokemonList() {
     }
   };
 
-  const filteredPokemons = pokemons.filter((pokemon) =>
-    pokemon.name.toLowerCase().includes(confirmedTerm.toLowerCase())
-  );
-
-  const typeColors = {
-    fire: "bg-red-500",
-    water: "bg-blue-500",
-    grass: "bg-green-500",
-    electric: "bg-yellow-400 text-black",
-    bug: "bg-lime-500",
-    normal: "bg-gray-400",
-    poison: "bg-purple-500",
-    ground: "bg-yellow-700",
-    fairy: "bg-pink-400",
-    fighting: "bg-orange-600",
-    psychic: "bg-pink-600",
-    rock: "bg-yellow-600",
-    ghost: "bg-indigo-600",
-    ice: "bg-cyan-400",
-    dragon: "bg-purple-700",
-    dark: "bg-gray-800 text-white",
-    steel: "bg-gray-500",
-    flying: "bg-sky-300 text-black",
-  };
+  const filteredPokemons = pokemons
+    .filter((pokemon) => {
+      const id = getPokemonId(pokemon.url);
+      return id <= 1025;
+    })
+    .filter((pokemon) => {
+      const id = getPokemonId(pokemon.url);
+      const eng = pokemon.name.toLowerCase();
+      const kor = (pokemonNameKr[id] || "").toLowerCase();
+      const term = confirmedTerm.toLowerCase();
+      return eng.includes(term) || kor.includes(term);
+    });
 
   return (
     <div className="p-4 relative">
-      <h2 className="mb-4 text-xl font-semibold">포켓몬 리스트</h2>
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-xl font-semibold">{text[language].title}</h2>
+        <button
+          onClick={toggleLanguage}
+          className="px-3 py-1 border rounded text-sm hover:bg-gray-100"
+        >
+          {text[language].toggleBtn}
+        </button>
+      </div>
 
       <div className="flex gap-2 mb-2">
         <input
           type="text"
-          placeholder="포켓몬 이름 검색"
+          placeholder={text[language].searchPlaceholder}
           value={searchTerm}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -139,7 +179,7 @@ function PokemonList() {
           onClick={() => confirmSearch(searchTerm)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          검색
+          {text[language].searchBtn}
         </button>
       </div>
 
@@ -147,6 +187,7 @@ function PokemonList() {
         <ul className="absolute bg-white border border-gray-300 w-full rounded z-10 max-h-60 overflow-y-auto">
           {suggestions.map((s, index) => {
             const id = getPokemonId(s.url);
+            const display = language === "ko" ? pokemonNameKr[id] || s.name : s.name;
             return (
               <li
                 key={s.name}
@@ -155,7 +196,7 @@ function PokemonList() {
                 }`}
                 onClick={() => confirmSearch(s.name)}
               >
-                {pokemonNameKr[id] || s.name}
+                {display}
               </li>
             );
           })}
@@ -167,46 +208,57 @@ function PokemonList() {
           const id = getPokemonId(pokemon.url);
           const number = `No. ${String(id).padStart(4, "0")}`;
           const gifUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
-          const basicPngUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-          const imageUrl = id <= 649 ? gifUrl : basicPngUrl;
+          const pngUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+          const imageUrl = id <= 649 ? gifUrl : pngUrl;
+          const displayName = language === "ko" ? pokemonNameKr[id] || pokemon.name : pokemon.name;
 
           return (
             <li
               key={pokemon.name}
-              className="bg-white rounded shadow p-4 hover:scale-105 transition-transform"
+              onClick={() => setSelectedPokemon(pokemon.name)}
+              className="bg-white rounded shadow p-4 hover:scale-105 transition-transform cursor-pointer"
             >
-              <Link
-                to={`/pokemon/${pokemon.name}`}
-                className="flex flex-col items-center justify-center text-center h-full"
-              >
+              <div className="flex flex-col items-center justify-center text-center h-full">
                 <img
                   src={imageUrl}
                   alt={pokemon.name}
                   className="w-20 h-20 object-contain mb-2 mx-auto"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = basicPngUrl;
+                    e.target.src = pngUrl;
                   }}
                 />
                 <p className="text-xs text-gray-500 mb-1">{number}</p>
-                <p className="font-medium">{pokemonNameKr[id] || pokemon.name}</p>
+                <p className="font-medium">{displayName}</p>
                 <div className="flex justify-center gap-1 mt-2 flex-wrap">
                   {pokemonTypes[pokemon.name]?.map((type) => (
                     <span
                       key={type}
                       className={`text-xs px-2 py-1 rounded-full text-white ${
-                        typeColors[type] || "bg-gray-300"
+                        typeColors[type] || "bg-gray-400"
                       }`}
                     >
-                      {typeKr[type] || type}
+                      {language === "ko" ? typeKr[type] || type : type}
                     </span>
                   ))}
                 </div>
-              </Link>
+              </div>
             </li>
           );
         })}
       </ul>
+
+      {selectedPokemon && (
+        <PokemonModal
+          name={selectedPokemon}
+          language={language}
+          onClose={() => setSelectedPokemon(null)}
+        />
+      )}
+
+      <div ref={loader} className="h-10 mt-6 text-center text-gray-400">
+        {hasMore ? "불러오는 중..." : "모든 포켓몬을 불러왔습니다"}
+      </div>
     </div>
   );
 }
