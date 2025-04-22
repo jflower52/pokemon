@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import pokemonNameKr from "../data/pokemonNameKr.json"; // ✅ 한글 이름 JSON import
 
 function PokemonList() {
   const [pokemons, setPokemons] = useState([]);
@@ -9,13 +10,33 @@ function PokemonList() {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [pokemonTypes, setPokemonTypes] = useState({});
 
+  const typeKr = {
+    normal: "노말",
+    fire: "불꽃",
+    water: "물",
+    electric: "전기",
+    grass: "풀",
+    ice: "얼음",
+    fighting: "격투",
+    poison: "독",
+    ground: "땅",
+    flying: "비행",
+    psychic: "에스퍼",
+    bug: "벌레",
+    rock: "바위",
+    ghost: "고스트",
+    dragon: "드래곤",
+    dark: "악",
+    steel: "강철",
+    fairy: "페어리",
+  };
+
   useEffect(() => {
-    fetch("https://pokeapi.co/api/v2/pokemon?limit=200&offset=0")
+    fetch("https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0")
       .then((res) => res.json())
       .then((data) => {
         setPokemons(data.results);
 
-        // 포켓몬 타입 정보 요청
         Promise.all(
           data.results.map((p) =>
             fetch(`https://pokeapi.co/api/v2/pokemon/${p.name}`)
@@ -48,9 +69,7 @@ function PokemonList() {
       setSuggestions([]);
       setActiveIndex(-1);
     } else {
-      const filtered = pokemons.filter((p) =>
-        p.name.toLowerCase().includes(input.toLowerCase())
-      );
+      const filtered = pokemons.filter((p) => p.name.toLowerCase().includes(input.toLowerCase()));
       setSuggestions(filtered.slice(0, 10));
       setActiveIndex(-1);
     }
@@ -65,13 +84,10 @@ function PokemonList() {
 
   const handleKeyDown = (e) => {
     if (suggestions.length === 0) return;
-
     if (e.key === "ArrowDown") {
       setActiveIndex((prev) => (prev + 1) % suggestions.length);
     } else if (e.key === "ArrowUp") {
-      setActiveIndex((prev) =>
-        prev === 0 ? suggestions.length - 1 : prev - 1
-      );
+      setActiveIndex((prev) => (prev === 0 ? suggestions.length - 1 : prev - 1));
     } else if (e.key === "Enter") {
       if (activeIndex >= 0) {
         confirmSearch(suggestions[activeIndex].name);
@@ -110,7 +126,6 @@ function PokemonList() {
     <div className="p-4 relative">
       <h2 className="mb-4 text-xl font-semibold">포켓몬 리스트</h2>
 
-      {/* 검색창 + 버튼 */}
       <div className="flex gap-2 mb-2">
         <input
           type="text"
@@ -128,24 +143,25 @@ function PokemonList() {
         </button>
       </div>
 
-      {/* 자동완성 리스트 */}
       {suggestions.length > 0 && (
         <ul className="absolute bg-white border border-gray-300 w-full rounded z-10 max-h-60 overflow-y-auto">
-          {suggestions.map((s, index) => (
-            <li
-              key={s.name}
-              className={`p-2 hover:bg-blue-100 cursor-pointer ${
-                index === activeIndex ? "bg-blue-100" : ""
-              }`}
-              onClick={() => confirmSearch(s.name)}
-            >
-              {s.name}
-            </li>
-          ))}
+          {suggestions.map((s, index) => {
+            const id = getPokemonId(s.url);
+            return (
+              <li
+                key={s.name}
+                className={`p-2 hover:bg-blue-100 cursor-pointer ${
+                  index === activeIndex ? "bg-blue-100" : ""
+                }`}
+                onClick={() => confirmSearch(s.name)}
+              >
+                {pokemonNameKr[id] || s.name}
+              </li>
+            );
+          })}
         </ul>
       )}
 
-      {/* 포켓몬 카드 리스트 */}
       <ul className="grid grid-cols-6 gap-4 mt-6">
         {filteredPokemons.map((pokemon) => {
           const id = getPokemonId(pokemon.url);
@@ -173,15 +189,16 @@ function PokemonList() {
                   }}
                 />
                 <p className="text-xs text-gray-500 mb-1">{number}</p>
-                <p className="font-medium capitalize">{pokemon.name}</p>
-
+                <p className="font-medium">{pokemonNameKr[id] || pokemon.name}</p>
                 <div className="flex justify-center gap-1 mt-2 flex-wrap">
                   {pokemonTypes[pokemon.name]?.map((type) => (
                     <span
                       key={type}
-                      className={`text-xs px-2 py-1 rounded-full text-white ${typeColors[type] || "bg-gray-300"}`}
+                      className={`text-xs px-2 py-1 rounded-full text-white ${
+                        typeColors[type] || "bg-gray-300"
+                      }`}
                     >
-                      {type}
+                      {typeKr[type] || type}
                     </span>
                   ))}
                 </div>
