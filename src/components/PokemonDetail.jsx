@@ -23,7 +23,7 @@ function PokemonDetail() {
         onClick={() => navigate(-1)}
         className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
       >
-        ← 돌아가기
+        돌아가기
       </button>
 
       <div className="flex flex-col items-center gap-4">
