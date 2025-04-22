@@ -2,55 +2,44 @@ import { useEffect, useState } from "react";
 import pokemonNameKr from "../data/pokemonNameKr.json";
 import { typeKr, typeColors } from "../data/typeMap";
 
-const textMap = {
-  ko: {
-    types: "타입",
-    stats: "기본 능력치",
-    statNames: {
-      hp: "HP",
-      attack: "공격",
-      defense: "방어",
-      "special-attack": "특수공격",
-      "special-defense": "특수방어",
-      speed: "스피드",
-    },
-  },
-  en: {
-    types: "Type",
-    stats: "Base Stats",
-    statNames: {
-      hp: "HP",
-      attack: "Attack",
-      defense: "Defense",
-      "special-attack": "Sp. Atk",
-      "special-defense": "Sp. Def",
-      speed: "Speed",
-    },
-  },
-};
-
 function PokemonModal({ name, onClose, language }) {
   const [pokemon, setPokemon] = useState(null);
+  const [species, setSpecies] = useState(null);
 
   useEffect(() => {
     fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
       .then((res) => res.json())
       .then((data) => setPokemon(data));
+
+    fetch(`https://pokeapi.co/api/v2/pokemon-species/${name}`)
+      .then((res) => res.json())
+      .then((data) => setSpecies(data));
   }, [name]);
 
-  if (!pokemon) return null;
+  if (!pokemon || !species) return null;
 
   const id = pokemon.id;
   const number = `No. ${String(id).padStart(4, "0")}`;
   const displayName = language === "ko" ? pokemonNameKr[id] || name : name;
+
   const gifUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
   const pngUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   const imageUrl = id <= 649 ? gifUrl : pngUrl;
-  const uiText = textMap[language];
+
+  const flavorText =
+    species.flavor_text_entries
+      .find((entry) => entry.language.name === (language === "ko" ? "ko" : "en"))
+      ?.flavor_text.replace(/\f/g, " ") || "정보 없음";
+
+  const height = (pokemon.height / 10).toFixed(1);
+  const weight = (pokemon.weight / 10).toFixed(1);
+
+  const category =
+    species.genera.find((g) => g.language.name === (language === "ko" ? "ko" : "en"))?.genus || "";
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
       onClick={onClose}
     >
       <div
@@ -64,7 +53,7 @@ function PokemonModal({ name, onClose, language }) {
           ×
         </button>
 
-        <div className="flex justify-center mb-2">
+        <div className="flex justify-center mb-4">
           <img
             src={imageUrl}
             alt={name}
@@ -79,31 +68,38 @@ function PokemonModal({ name, onClose, language }) {
         <h2 className="text-xl font-bold">{displayName}</h2>
         <p className="text-sm text-gray-500">{number}</p>
 
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold mb-1">{uiText.types}</h3>
-          <div className="flex justify-center gap-2 flex-wrap">
-            {pokemon.types.map((t) => (
-              <span
-                key={t.type.name}
-                className={`text-xs px-2 py-1 rounded-full text-white ${
-                  typeColors[t.type.name] || "bg-gray-400"
-                }`}
-              >
-                {language === "ko" ? typeKr[t.type.name] || t.type.name : t.type.name}
-              </span>
-            ))}
-          </div>
-        </div>
+        {/* 설명 */}
+        <p className="mt-4 text-sm italic text-gray-600">{flavorText}</p>
 
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold mb-1">{uiText.stats}</h3>
-          <ul className="text-sm space-y-1">
-            {pokemon.stats.map((s) => (
-              <li key={s.stat.name}>
-                {uiText.statNames[s.stat.name] || s.stat.name}: {s.base_stat}
-              </li>
-            ))}
-          </ul>
+        {/* 기본 정보 */}
+        <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-gray-700">
+          <div>
+            <p className="font-semibold">{language === "ko" ? "키" : "Height"}</p>
+            <p>{height} m</p>
+          </div>
+          <div>
+            <p className="font-semibold">{language === "ko" ? "몸무게" : "Weight"}</p>
+            <p>{weight} kg</p>
+          </div>
+          <div>
+            <p className="font-semibold">{language === "ko" ? "분류" : "Category"}</p>
+            <p>{category}</p>
+          </div>
+          <div>
+            <p className="font-semibold">{language === "ko" ? "타입" : "Type"}</p>
+            <div className="flex justify-center gap-1 flex-wrap mt-1">
+              {pokemon.types.map((t) => (
+                <span
+                  key={t.type.name}
+                  className={`text-xs px-2 py-1 rounded-full text-white ${
+                    typeColors[t.type.name] || "bg-gray-400"
+                  }`}
+                >
+                  {language === "ko" ? typeKr[t.type.name] || t.type.name : t.type.name}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
