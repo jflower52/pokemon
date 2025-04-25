@@ -43,21 +43,21 @@ function PokemonModal({ name, onClose, language }) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg p-6 w-[90%] max-w-md relative text-center"
+        className="bg-white rounded-lg pt-[40px] pb-[60px] px-[40px] w-[90%] max-w-[700px] relative text-center"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-600 hover:text-black text-lg"
+          className="absolute top-4 right-4 text-gray-600 hover:text-black text-2xl"
         >
           ×
         </button>
 
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mt-[40px] mb-8">
           <img
             src={imageUrl}
             alt={name}
-            className="w-32 h-32 object-contain"
+            className="w-40 h-40 object-contain"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = pngUrl;
@@ -65,14 +65,12 @@ function PokemonModal({ name, onClose, language }) {
           />
         </div>
 
-        <h2 className="text-xl font-bold">{displayName}</h2>
-        <p className="text-sm text-gray-500">{number}</p>
+        <h2 className="text-2xl font-bold">{displayName}</h2>
+        <p className="text-gray-500 mb-4">{number}</p>
 
-        {/* 설명 */}
-        <p className="mt-4 text-sm italic text-gray-600">{flavorText}</p>
+        <p className="italic text-gray-600">{flavorText}</p>
 
-        {/* 기본 정보 */}
-        <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-gray-700">
+        <div className="mt-10 mb-8 grid grid-cols-2 gap-6 text-sm text-gray-700">
           <div>
             <p className="font-semibold">{language === "ko" ? "키" : "Height"}</p>
             <p>{height} m</p>
@@ -87,11 +85,11 @@ function PokemonModal({ name, onClose, language }) {
           </div>
           <div>
             <p className="font-semibold">{language === "ko" ? "타입" : "Type"}</p>
-            <div className="flex justify-center gap-1 flex-wrap mt-1">
+            <div className="flex justify-center gap-2 mt-1 flex-wrap">
               {pokemon.types.map((t) => (
                 <span
                   key={t.type.name}
-                  className={`text-xs px-2 py-1 rounded-full text-white ${
+                  className={`text-sm px-3 py-1 rounded-full text-white ${
                     typeColors[t.type.name] || "bg-gray-400"
                   }`}
                 >
