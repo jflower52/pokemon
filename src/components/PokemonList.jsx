@@ -7,12 +7,12 @@ import { Link } from "react-router-dom";
 
 const text = {
   ko: {
-    searchPlaceholder: " 한글 이름으로 검색",
+    searchPlaceholder: "한글 이름으로 검색",
     searchBtn: "검색",
     toggleBtn: "ENG",
   },
   en: {
-    searchPlaceholder: " Search by English name",
+    searchPlaceholder: "Search by English name",
     searchBtn: "Search",
     toggleBtn: "KOR",
   },

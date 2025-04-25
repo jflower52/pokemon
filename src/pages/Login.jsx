@@ -13,7 +13,7 @@ function Login() {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         console.log("로그인 성공:", userCredential.user);
-        navigate("/"); // 메인화면 이동
+        navigate("/");
       })
       .catch((error) => {
         console.error("로그인 실패:", error);

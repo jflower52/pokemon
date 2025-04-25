@@ -13,7 +13,7 @@ function Signup() {
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         console.log("회원가입 성공:", userCredential.user);
-        navigate("/"); // 메인화면 이동
+        navigate("/");
       })
       .catch((error) => {
         console.error("회원가입 실패:", error);
